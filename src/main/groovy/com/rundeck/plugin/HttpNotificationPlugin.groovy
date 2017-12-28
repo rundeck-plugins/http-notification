@@ -216,6 +216,7 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
             requestHeaders."Authorization" = authentication
         }
 
+        requestHeaders."trigger" = trigger
         requestHeaders.putAll(parseHeaders(headersStr))
 
         http.getClient().getParams().setParameter("http.connection.timeout", new Integer(timeout))
