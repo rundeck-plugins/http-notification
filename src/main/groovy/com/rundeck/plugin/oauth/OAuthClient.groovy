@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.HttpResponseException
 import groovyx.net.http.Method
+import org.apache.http.util.EntityUtils
 import org.apache.log4j.Logger;
 
 /**
@@ -65,11 +66,7 @@ class OAuthClient {
             body = ["${this.FIELD_GRANT_TYPE}": this.grantType.name().toLowerCase()]
 
             response.success = { resp, json ->
-                println "Got response: ${resp.statusLine}"
-                println "Content-Type: ${resp.headers.'Content-Type'}"
-                println json
-
-                JsonNode data = jsonParser.readTree(EntityUtils.toString(reader));
+                JsonNode data = jsonParser.readTree(EntityUtils.toString(json));
                 String token = data.get(FIELD_ACCESS_TOKEN).asText();
                 return token
             }
@@ -121,13 +118,8 @@ class OAuthClient {
                 body = ["${this.FIELD_GRANT_TYPE}": this.grantType.name().toLowerCase()]
 
                 response.success = { resp, json ->
-                    println "Got response: ${resp.statusLine}"
-                    println "Content-Type: ${resp.headers.'Content-Type'}"
-                    //println reader.text
-                    println json
+
                     if(resp.statusLine==STATUS_SUCCESS){
-                        //JsonNode data = jsonParser.readTree(EntityUtils.toString(reader));
-                        //String clientId = data.get("client").asText();
                         String clientId = json.client
                         return clientId
                     }else if (resp.statusLine == STATUS_AUTHORIZATION_REQUIRED) {
@@ -135,12 +127,10 @@ class OAuthClient {
                     }else {
                         return null
                     }
-
-
                 }
 
                 response.failure = { resp ->
-                    "Unexpected failure: ${resp.statusLine}"
+                    println "Unexpected failure: ${resp.statusLine}"
                     return null
                 }
 

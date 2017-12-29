@@ -219,9 +219,10 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
         requestHeaders."trigger" = trigger
         requestHeaders.putAll(parseHeaders(headersStr))
 
-        http.getClient().getParams().setParameter("http.connection.timeout", new Integer(timeout))
-        http.getClient().getParams().setParameter("http.socket.timeout", new Integer(timeout))
-
+        if(timeout>0){
+            http.getClient().getParams().setParameter("http.connection.timeout", new Integer(timeout))
+            http.getClient().getParams().setParameter("http.socket.timeout", new Integer(timeout))
+        }
 
         if(proxy){
             String proxyIp = config.containsKey(HTTP_PROXY_IP) ? config.get(HTTP_PROXY_IP).toString() : null
@@ -229,30 +230,48 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
             http.setProxy(proxyIp, proxyPort, 'http')
         }
 
-        http.request( remoteUrl, Method.valueOf(method),contentType) { req ->
+        def result = false
 
-            requestHeaders.each { key, value ->
-                headers."${key}" = "${value}"
-            }
+        try{
+            result = http.request( remoteUrl, Method.valueOf(method),contentType) { req ->
 
-            if(requestBody!=null){
-                body = requestBody
-            }
+                requestHeaders.each { key, value ->
+                    headers."${key}" = "${value}"
+                }
 
-            response.success = { resp, reader ->
-                println "--------------------------------------------"
-                println "Got response: ${resp.statusLine}"
-                println "Content-Type: ${resp.headers.'Content-Type'}"
-                println reader
-            }
+                if(requestBody!=null){
+                    body = requestBody
+                }
 
-            response.'404' = {
-                println 'Not found'
+                response.success = { resp, reader ->
+                    println "--------------------------------------------"
+                    println "Got response: ${resp.statusLine}"
+                    println "Content-Type: ${resp.headers.'Content-Type'}"
+
+                    return true
+                }
+
+                response.failure = { resp ->
+                    println "--------------------------------------------"
+                    println "Unexpected failure: ${resp.statusLine}"
+                    return false
+                }
+
+                response.'404' = {
+                    println "--------------------------------------------"
+                    println 'Error 404, Not found'
+
+                    return false
+                }
             }
+        }catch(Exception e){
+            println "--------------------------------------------"
+            println "Error calling the endpoint: ${e.getMessage()}"
+            result=false
         }
 
 
-        return true
+        return result
     }
 
     Map<String,String> parseHeaders(String headers){
