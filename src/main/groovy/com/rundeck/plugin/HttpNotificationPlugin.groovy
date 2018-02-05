@@ -37,6 +37,8 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
     static final String AUTH_NONE = "None"
     static final String AUTH_BASIC = "Basic"
     static final String AUTH_OAUTH2 = "OAuth 2.0"
+    public static final String XML_FORMAT = "xml";
+    public static final String JSON_FORMAT = "json";
 
     static final String HTTP_URL="remoteUrl"
     static final String HTTP_METHOD="method"
@@ -53,6 +55,9 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
     static final String HTTP_PROXY_ENABLE="proxySettings"
     static final String HTTP_PROXY_IP="proxyIP"
     static final String HTTP_PROXY_PORT="proxyPort"
+
+    static final String HTTP_PRINT="printResponseToFile"
+    static final String HTTP_PRINT_FILE="file"
 
     /**
      * Synchronized map of all existing OAuth clients. This is indexed by
@@ -178,6 +183,20 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
                                         .renderingOption(StringRenderingConstants.GROUPING,"secondary")
                                         .required(false)
                                         .build())
+                .property(PropertyBuilder.builder()
+                                        .booleanType(HTTP_PRINT)
+                                        .title("Print Response to File?")
+                                        .description("Set if you want to print the response content to a file.")
+                                        .defaultValue("false")
+                                        .renderingOption(StringRenderingConstants.GROUP_NAME,"Print")
+                                        .build())
+                .property(PropertyBuilder.builder()
+                                        .string(HTTP_PRINT_FILE)
+                                        .title("File Path")
+                                        .description("File path where you will write the response.")
+                                        .required(false)
+                                        .renderingOption(StringRenderingConstants.GROUP_NAME,"Print")
+                                        .build())
                 .build();
 
 
@@ -196,6 +215,9 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
         String bodyStr = config.containsKey(HTTP_BODY) ? config.get(HTTP_BODY).toString() : null
         Boolean ignoreSSL = Boolean.valueOf(config.get(HTTP_NO_SSL_VERIFICATION))
         Boolean proxy = Boolean.valueOf(config.get(HTTP_PROXY_ENABLE))
+        Boolean print = Boolean.valueOf(config.get(HTTP_PRINT))
+        String printFile = config.containsKey(HTTP_PRINT_FILE) ? config.get(HTTP_PRINT_FILE).toString() : null
+
 
         if(remoteUrl == null || method == null) {
             throw new Exception("Remote URL and Method are required.");
@@ -248,12 +270,26 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
                     println "Got response: ${resp.statusLine}"
                     println "Content-Type: ${resp.headers.'Content-Type'}"
 
+                    //print the response content
+                    if( print) {
+                        println "Response: ${reader.toString()}"
+                        File file = new File(printFile);
+                        file.write reader.toString()
+                    }
+
                     return true
                 }
 
-                response.failure = { resp ->
+                response.failure = { resp, reader ->
                     println "--------------------------------------------"
                     println "Unexpected failure: ${resp.statusLine}"
+
+                    //print the response content
+                    if( print) {
+                        println "Response: ${reader.toString()}"
+                        File file = new File(printFile);
+                        file.write reader.toString()
+                    }
                     return false
                 }
 
