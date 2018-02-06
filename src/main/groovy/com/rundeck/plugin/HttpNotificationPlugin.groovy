@@ -196,6 +196,7 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
                                         .description("File path where you will write the response.")
                                         .required(false)
                                         .renderingOption(StringRenderingConstants.GROUP_NAME,"Print")
+                                        .renderingOption(StringRenderingConstants.GROUPING,"secondary")
                                         .build())
                 .build();
 
