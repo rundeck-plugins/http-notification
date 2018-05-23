@@ -14,8 +14,10 @@ import com.google.gson.Gson
 import com.rundeck.plugin.oauth.OAuthClient
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.EncoderRegistry
 import groovyx.net.http.Method
 import org.apache.log4j.Logger
+import java.nio.charset.Charset;
 
 /**
  * Created by rundeck on 12/27/17.
@@ -207,7 +209,8 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
     }
 
     @Override
-    boolean postNotification(String trigger, Map executionData, Map config) {
+    boolean postNotification(String trigger, Map executionData, Map config) 
+	{
         String remoteUrl = config.containsKey(HTTP_URL) ? config.get(HTTP_URL).toString() : null
         String method = config.containsKey(HTTP_METHOD) ? config.get(HTTP_METHOD).toString() : null
         String contentTypeStr = config.containsKey(HTTP_CONTENT_TYPE) ? config.get(HTTP_CONTENT_TYPE).toString() : null
@@ -228,6 +231,9 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
         def requestBody = parseBody(bodyStr)
 
         def http = new HTTPBuilder()
+        
+        http.encoderRegistry = new EncoderRegistry( charset: 'utf-8' )
+
         if(ignoreSSL){
             http.ignoreSSLIssues()
         }
@@ -311,7 +317,8 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
         return result
     }
 
-    Map<String,String> parseHeaders(String headers){
+    Map<String,String> parseHeaders(String headers)
+	{
         Map<String,String> requestHeaders = new HashMap<>();
 
         //checking json
