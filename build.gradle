@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-    id 'pl.allegro.tech.build.axion-release' version '1.5.0'
+    id 'pl.allegro.tech.build.axion-release' version '1.10.0'
 }
 
 group 'com.rundeck.plugin'
@@ -25,7 +25,7 @@ ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 scmVersion {
     ignoreUncommittedChanges = false
     tag {
-        prefix = 'v'
+        prefix = ''
         versionSeparator = ''
         def origDeserialize=deserialize
         //apend .0 to satisfy semver if the tag version is only X.Y
