@@ -6,13 +6,14 @@ import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.HttpResponseException
 import groovyx.net.http.Method
 import org.apache.http.util.EntityUtils
-import org.apache.log4j.Logger;
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Created by rundeck on 12/27/17.
  */
 class OAuthClient {
-    private static final Logger log = Logger.getLogger(OAuthClient.class);
+    private static final Logger log = LoggerFactory.getLogger(OAuthClient.class);
 
 
     public static final String JSON_CONTENT_TYPE = "application/json";
