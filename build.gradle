@@ -56,6 +56,7 @@ repositories {
 
 dependencies {
     compile group: 'org.rundeck', name: 'rundeck-core', version: '2.10.1'
+    compile 'org.slf4j:slf4j-api:1.7.30'
     pluginLibs (group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version: '0.7.1') {
         exclude (group: "commons-collections", module: "commons-collections")
         exclude (group: "commons-beanutils", module: "commons-beanutils")

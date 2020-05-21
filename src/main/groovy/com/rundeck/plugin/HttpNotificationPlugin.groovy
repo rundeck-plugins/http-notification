@@ -15,7 +15,8 @@ import com.rundeck.plugin.oauth.OAuthClient
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
-import org.apache.log4j.Logger
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Created by rundeck on 12/27/17.
@@ -24,7 +25,7 @@ import org.apache.log4j.Logger
 @PluginDescription(title=HttpNotificationPlugin.SERVICE_TITLE, description=HttpNotificationPlugin.SERVICE_PROVIDER_DESCRIPTION)
 class HttpNotificationPlugin implements NotificationPlugin, Describable {
 
-    private static final Logger log = Logger.getLogger(HttpNotificationPlugin.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpNotificationPlugin.class);
 
     public static final String SERVICE_PROVIDER_NAME="HttpNotification"
     public static final String  SERVICE_TITLE="Http Notification"
