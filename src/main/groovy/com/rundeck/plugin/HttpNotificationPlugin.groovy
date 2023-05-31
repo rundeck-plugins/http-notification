@@ -1,5 +1,7 @@
 package com.rundeck.plugin
 
+import com.dtolabs.rundeck.core.execution.workflow.steps.StepException
+import com.dtolabs.rundeck.core.execution.workflow.steps.node.NodeStepException
 import com.dtolabs.rundeck.core.plugins.Plugin
 import com.dtolabs.rundeck.core.plugins.configuration.Describable
 import com.dtolabs.rundeck.core.plugins.configuration.Description
@@ -9,14 +11,14 @@ import com.dtolabs.rundeck.plugins.descriptions.PluginDescription
 import com.dtolabs.rundeck.plugins.notification.NotificationPlugin
 import com.dtolabs.rundeck.plugins.util.DescriptionBuilder
 import com.dtolabs.rundeck.plugins.util.PropertyBuilder
-import com.esotericsoftware.yamlbeans.YamlReader
-import com.google.gson.Gson
-import com.rundeck.plugin.oauth.OAuthClient
-import groovyx.net.http.ContentType
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
+import org.apache.http.HttpEntity
+import org.apache.http.client.config.RequestConfig
+import org.apache.http.client.methods.RequestBuilder
+import org.apache.http.entity.ByteArrayEntity
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import edu.ohio.ais.rundeck.HttpBuilder
+import edu.ohio.ais.rundeck.util.OAuthClient
 
 /**
  * Created by rundeck on 12/27/17.
@@ -220,163 +222,80 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
         Boolean print = Boolean.valueOf(config.get(HTTP_PRINT))
         String printFile = config.containsKey(HTTP_PRINT_FILE) ? config.get(HTTP_PRINT_FILE).toString() : null
 
-
         if(remoteUrl == null || method == null) {
             throw new Exception("Remote URL and Method are required.");
         }
 
-        def requestHeaders = [:]
-        def requestBody = parseBody(bodyStr)
+        HttpLogger logger = new HttpLogger(log)
 
-        def http = new HTTPBuilder()
-        if(ignoreSSL){
-            http.ignoreSSLIssues()
+        HttpBuilder builder = new HttpBuilder()
+        builder.setLog(logger)
+        builder.setOauthClients(oauthClients)
+
+        // Setup the request and process it.
+        RequestBuilder request = RequestBuilder.create(method)
+                .setUri(remoteUrl)
+                .setConfig(RequestConfig.custom()
+                        .setConnectionRequestTimeout(timeout)
+                        .setConnectTimeout(timeout)
+                        .setSocketTimeout(timeout)
+                        .build());
+
+        String authHeader = getAuthentication(config)
+
+        if(authHeader != null) {
+            request.setHeader("Authorization", authHeader);
         }
 
-        ContentType contentType = getContentType(contentTypeStr)
-        String authentication = getAuthentication(config)
-
-        if(authentication!=null){
-            requestHeaders."Authorization" = authentication
+        //add custom headers, it could be json or yml
+        if(headersStr !=null){
+            builder.setHeaders(headersStr, request);
         }
 
-        requestHeaders."trigger" = trigger
-        requestHeaders.putAll(parseHeaders(headersStr))
-
-        if(timeout>0){
-            http.getClient().getParams().setParameter("http.connection.timeout", new Integer(timeout))
-            http.getClient().getParams().setParameter("http.socket.timeout", new Integer(timeout))
+        if(contentTypeStr){
+            request.setHeader("Content-Type", contentTypeStr)
         }
+
+        request.setHeader("trigger", trigger)
+
+        //send body
+        if(bodyStr !=null){
+            HttpEntity entity = null;
+            try {
+                entity = new ByteArrayEntity(bodyStr.getBytes("UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            request.setEntity(entity);
+        }
+
+        Map<String, Object> configuration = [
+                "sslVerify":ignoreSSL,
+                "proxySettings": proxy,
+                "printResponseToFile": print,
+        ]
 
         if(proxy){
             String proxyIp = config.containsKey(HTTP_PROXY_IP) ? config.get(HTTP_PROXY_IP).toString() : null
             Integer proxyPort = config.containsKey(HTTP_PROXY_PORT) ? Integer.parseInt(config.get(HTTP_PROXY_PORT).toString()) : null
-            http.setProxy(proxyIp, proxyPort, 'http')
+            configuration.put("proxyIP", proxyIp)
+            configuration.put("proxyPort", proxyPort)
         }
 
-        def result = false
-
-        try{
-            result = http.request( remoteUrl, Method.valueOf(method),contentType) { req ->
-
-                requestHeaders.each { key, value ->
-                    headers."${key}" = "${value}"
-                }
-
-                if(requestBody!=null){
-                    body = requestBody
-                }
-
-                response.success = { resp, reader ->
-                    println "--------------------------------------------"
-                    println "Got response: ${resp.statusLine}"
-                    println "Content-Type: ${resp.headers.'Content-Type'}"
-
-                    //print the response content
-                    if( print) {
-                        println "Response: ${reader.toString()}"
-                        File file = new File(printFile);
-                        file.write reader.toString()
-                    }
-
-                    return true
-                }
-
-                response.failure = { resp, reader ->
-                    println "--------------------------------------------"
-                    println "Unexpected failure: ${resp.statusLine}"
-
-                    //print the response content
-                    if( print) {
-                        println "Response: ${reader.toString()}"
-                        File file = new File(printFile);
-                        file.write reader.toString()
-                    }
-                    return false
-                }
-
-                response.'404' = {
-                    println "--------------------------------------------"
-                    println 'Error 404, Not found'
-
-                    return false
-                }
-            }
-        }catch(Exception e){
-            println "--------------------------------------------"
-            println "Error calling the endpoint: ${e.getMessage()}"
-            result=false
+        if(print){
+            configuration.put("file", printFile)
         }
-
-
-        return result
-    }
-
-    Map<String,String> parseHeaders(String headers){
-        Map<String,String> requestHeaders = new HashMap<>();
-
-        //checking json
-        Gson gson = new Gson();
-
 
         try {
-            requestHeaders = (Map<String,String>) gson.fromJson(headers, requestHeaders.getClass());
-        } catch (Exception e) {
-            requestHeaders = null;
+            builder.doRequest(configuration, request.build(), 1)
+        } catch (StepException e) {
+            log.error(e.getMessage())
+            return false
         }
 
-        //checking yml
-        if(requestHeaders == null) {
-            try {
-                YamlReader reader = new YamlReader(headers);
-                requestHeaders = (Map<String,String>) reader.read();
-            } catch (Exception e) {
-                requestHeaders = null;
-            }
-        }
-
-        if(requestHeaders == null){
-            requestHeaders = new HashMap<>();
-
-        }
-
-        return requestHeaders
+        return true
 
     }
-
-    def parseBody(String body){
-
-        Map<String,String> bodyResponse = new HashMap<>();
-
-        //checking json
-        Gson gson = new Gson();
-        try {
-            bodyResponse = (Map<String,String>) gson.fromJson(body, bodyResponse.getClass());
-            return bodyResponse
-        } catch (Exception e) {
-            bodyResponse = null;
-        }
-
-        if(bodyResponse == null){
-            return body
-        }
-
-    }
-
-    def getContentType(String type){
-        ContentType contentType = null
-        switch (type) {
-            case "application/json": contentType=ContentType.JSON; break;
-            case "application/xml": contentType=ContentType.XML; break;
-            case "text/xml": contentType=ContentType.XML; break;
-            case "text/html": contentType=ContentType.HTML; break;
-            case "application/x-www-form-urlencoded": contentType=ContentType.URLENC; break;
-            default: contentType=ContentType.TEXT
-        }
-
-        return contentType
-    }
-
 
     def getAuthentication(Map config){
 
