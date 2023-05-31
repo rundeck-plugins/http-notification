@@ -113,10 +113,6 @@ jar {
 //set jar task to depend on copyToLib
 jar.dependsOn(copyToLib)
 
-wrapper {
-    gradleVersion = '4.4.1'
-}
-
 tasks.withType(Test) {
     useJUnitPlatform()
 }
