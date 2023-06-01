@@ -1,7 +1,6 @@
 package com.rundeck.plugin
 
 import com.dtolabs.rundeck.core.execution.workflow.steps.StepException
-import com.dtolabs.rundeck.core.execution.workflow.steps.node.NodeStepException
 import com.dtolabs.rundeck.core.plugins.Plugin
 import com.dtolabs.rundeck.core.plugins.configuration.Describable
 import com.dtolabs.rundeck.core.plugins.configuration.Description
@@ -11,6 +10,7 @@ import com.dtolabs.rundeck.plugins.descriptions.PluginDescription
 import com.dtolabs.rundeck.plugins.notification.NotificationPlugin
 import com.dtolabs.rundeck.plugins.util.DescriptionBuilder
 import com.dtolabs.rundeck.plugins.util.PropertyBuilder
+import groovy.transform.CompileStatic
 import org.apache.http.HttpEntity
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.RequestBuilder
@@ -23,8 +23,9 @@ import edu.ohio.ais.rundeck.util.OAuthClient
 /**
  * Created by rundeck on 12/27/17.
  */
-@Plugin(service= ServiceNameConstants.Notification, name=HttpNotificationPlugin.SERVICE_PROVIDER_NAME)
-@PluginDescription(title=HttpNotificationPlugin.SERVICE_TITLE, description=HttpNotificationPlugin.SERVICE_PROVIDER_DESCRIPTION)
+@Plugin(service= ServiceNameConstants.Notification, name= SERVICE_PROVIDER_NAME)
+@PluginDescription(title= SERVICE_TITLE, description= SERVICE_PROVIDER_DESCRIPTION)
+@CompileStatic
 class HttpNotificationPlugin implements NotificationPlugin, Describable {
 
     private static final Logger log = LoggerFactory.getLogger(HttpNotificationPlugin.class);
@@ -217,9 +218,9 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
         Integer timeout = config.containsKey(HTTP_TIMEOUT) ? Integer.parseInt(config.get(HTTP_TIMEOUT).toString()) : DEFAULT_TIMEOUT
         String headersStr = config.containsKey(HTTP_HEADERS) ? config.get(HTTP_HEADERS).toString() : null
         String bodyStr = config.containsKey(HTTP_BODY) ? config.get(HTTP_BODY).toString() : null
-        Boolean ignoreSSL = Boolean.valueOf(config.get(HTTP_NO_SSL_VERIFICATION))
-        Boolean proxy = Boolean.valueOf(config.get(HTTP_PROXY_ENABLE))
-        Boolean print = Boolean.valueOf(config.get(HTTP_PRINT))
+        Boolean ignoreSSL = Boolean.valueOf((String)config.get(HTTP_NO_SSL_VERIFICATION))
+        Boolean proxy = Boolean.valueOf((String)config.get(HTTP_PROXY_ENABLE))
+        Boolean print = Boolean.valueOf((String)config.get(HTTP_PRINT))
         String printFile = config.containsKey(HTTP_PRINT_FILE) ? config.get(HTTP_PRINT_FILE).toString() : null
 
         if(remoteUrl == null || method == null) {
@@ -239,17 +240,17 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
                         .setConnectionRequestTimeout(timeout)
                         .setConnectTimeout(timeout)
                         .setSocketTimeout(timeout)
-                        .build());
+                        .build())
 
-        String authHeader = getAuthentication(config)
+        String authHeader = getAuthentication(config, logger)
 
         if(authHeader != null) {
-            request.setHeader("Authorization", authHeader);
+            request.setHeader("Authorization", authHeader)
         }
 
         //add custom headers, it could be json or yml
         if(headersStr !=null){
-            builder.setHeaders(headersStr, request);
+            builder.setHeaders(headersStr, request)
         }
 
         if(contentTypeStr){
@@ -260,20 +261,20 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
 
         //send body
         if(bodyStr !=null){
-            HttpEntity entity = null;
+            HttpEntity entity = null
             try {
-                entity = new ByteArrayEntity(bodyStr.getBytes("UTF-8"));
+                entity = new ByteArrayEntity(bodyStr.getBytes("UTF-8"))
             } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                e.printStackTrace()
             }
-            request.setEntity(entity);
+            request.setEntity(entity)
         }
 
-        Map<String, Object> configuration = [
-                "sslVerify":ignoreSSL,
-                "proxySettings": proxy,
-                "printResponseToFile": print,
-        ]
+        Map<String, Object> configuration = new HashMap<>()
+
+        configuration.put("sslVerify", !ignoreSSL)
+        configuration.put("proxySettings", proxy)
+        configuration.put("printResponseToFile", print)
 
         if(proxy){
             String proxyIp = config.containsKey(HTTP_PROXY_IP) ? config.get(HTTP_PROXY_IP).toString() : null
@@ -286,18 +287,18 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
             configuration.put("file", printFile)
         }
 
-        try {
-            builder.doRequest(configuration, request.build(), 1)
-        } catch (StepException e) {
-            log.error(e.getMessage())
-            return false
-        }
+       try {
+           builder.doRequest(configuration, request.build(), 1)
+       } catch (StepException e) {
+           log.error(e.getMessage())
+           return false
+       }
 
-        return true
+       return true
 
     }
 
-    def getAuthentication(Map config){
+    def getAuthentication(Map config, HttpLogger logger){
 
         String authentication = config.containsKey(HTTP_AUTHENTICATION) ? config.get(HTTP_AUTHENTICATION).toString() : AUTH_NONE
         String password = config.containsKey(HTTP_PASSWORD) ? config.get(HTTP_PASSWORD).toString() : AUTH_NONE
@@ -311,62 +312,61 @@ class HttpNotificationPlugin implements NotificationPlugin, Describable {
                 throw new Exception("Username and password not provided for BASIC Authentication");
             }
 
-            authHeader = username + ":" + password;
+            authHeader = username + ":" + password
 
             //As per RFC2617 the Basic Authentication standard has to send the credentials Base64 encoded.
-            authHeader = "Basic " + com.dtolabs.rundeck.core.utils.Base64.encode(authHeader);
+            authHeader = "Basic " + com.dtolabs.rundeck.core.utils.Base64.encode(authHeader)
         } else if (authentication.equals(AUTH_OAUTH2)) {
             // Get an OAuth token and setup the auth header for OAuth
-            String tokenEndpoint = config.containsKey(HTTP_AUTHTOKEN_ENDPOINT) ? config.get(HTTP_AUTHTOKEN_ENDPOINT).toString() : null;
-            String validateEndpoint = config.containsKey(HTTP_AUTHTVALIDATE_ENDPOINT) ? config.get(HTTP_AUTHTVALIDATE_ENDPOINT).toString() : null;
-            String clientId = config.containsKey(HTTP_USERNAME) ? config.get(HTTP_USERNAME).toString() : null;
-            String clientSecret = password;
+            String tokenEndpoint = config.containsKey(HTTP_AUTHTOKEN_ENDPOINT) ? config.get(HTTP_AUTHTOKEN_ENDPOINT).toString() : null
+            String validateEndpoint = config.containsKey(HTTP_AUTHTVALIDATE_ENDPOINT) ? config.get(HTTP_AUTHTVALIDATE_ENDPOINT).toString() : null
+            String clientId = config.containsKey(HTTP_USERNAME) ? config.get(HTTP_USERNAME).toString() : null
+            String clientSecret = password
 
             if(tokenEndpoint == null) {
-                throw new Exception("Token endpoint not provided for OAuth 2.0 Authentication.");
+                throw new Exception("Token endpoint not provided for OAuth 2.0 Authentication.")
             }
 
-            String clientKey = clientId + "@" + tokenEndpoint;
-            String accessToken;
+            String clientKey = clientId + "@" + tokenEndpoint
+            String accessToken
 
             // Another thread may be trying to do the same thing.
             synchronized(this.oauthClients) {
-                OAuthClient client;
+                OAuthClient client
 
                 if(this.oauthClients.containsKey(clientKey)) {
                     // Update the existing client with our options if it exists.
                     // We do this so that changes to configuration will always
                     // update clients on next run.
-                    log.trace("Found existing OAuth client with key " + clientKey);
-                    client = this.oauthClients.get(clientKey);
-                    client.setCredentials(clientId, clientSecret);
-                    client.setValidateEndpoint(validateEndpoint);
+                    log.trace("Found existing OAuth client with key " + clientKey)
+                    client = this.oauthClients.get(clientKey)
+                    client.setCredentials(clientId, clientSecret)
+                    client.setValidateEndpoint(validateEndpoint)
                 } else {
                     // Create a brand new client
-                    log.trace("Creating new OAuth client with key " + clientKey);
-                    client = new OAuthClient(OAuthClient.GrantType.CLIENT_CREDENTIALS);
-                    client.setCredentials(clientId, clientSecret);
-                    client.setTokenEndpoint(tokenEndpoint);
-                    client.setValidateEndpoint(validateEndpoint);
+                    log.trace("Creating new OAuth client with key " + clientKey)
+                    client = new OAuthClient(OAuthClient.GrantType.CLIENT_CREDENTIALS, logger )
+                    client.setCredentials(clientId, clientSecret)
+                    client.setTokenEndpoint(tokenEndpoint)
+                    client.setValidateEndpoint(validateEndpoint)
                 }
 
                 // Grab the access token
                 try {
-                    log.trace("Attempting to fetch access token...");
-                    accessToken = client.getAccessToken();
+                    log.trace("Attempting to fetch access token...")
+                    accessToken = client.getAccessToken()
                 } catch(Exception ex) {
-                    Exception se = new Exception("Error obtaining OAuth Access Token: " + ex.getMessage());
+                    Exception se = new Exception("Error obtaining OAuth Access Token: " + ex.getMessage())
                     se.initCause(ex);
                     throw se;
                 }
 
-                this.oauthClients.put(clientKey, client);
+                this.oauthClients.put(clientKey, client)
             }
 
-            authHeader = "Bearer " + accessToken;
+            authHeader = "Bearer " + accessToken
         }
         return authHeader
 
     }
-
 }
