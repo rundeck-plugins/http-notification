@@ -24,7 +24,7 @@ ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 
 
 scmVersion {
-    ignoreUncommittedChanges = false
+    ignoreUncommittedChanges = true
     tag {
         prefix = ''
         versionSeparator = ''
