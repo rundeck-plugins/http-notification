@@ -16,7 +16,7 @@ apply plugin: 'pl.allegro.tech.build.axion-release'
 apply plugin: 'groovy'
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 ext.rundeckPluginVersion = '1.2'
 ext.pluginClassNames='com.rundeck.plugin.HttpNotificationPlugin'
 ext.pluginName = 'Http Notification'
@@ -61,7 +61,7 @@ repositories {
 dependencies {
     implementation 'org.rundeck:rundeck-core:4.13.0-20230515'
 
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.2'){
+    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.6'){
         exclude group: 'org.rundeck', module: 'rundeck-core'
     }
 
