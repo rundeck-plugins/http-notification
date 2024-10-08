@@ -53,7 +53,7 @@ class HttpNotificationPluginSpec extends Specification{
 
         def notificator = new HttpNotificationPlugin()
 
-        String remoteUrl="http://123.com"
+        String remoteUrl="http://asdf123asdf.com/"
         String methodStr = "PUT"
         String contentType ="text/html"
         def executionData = [:]
