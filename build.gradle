@@ -59,7 +59,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.rundeck:rundeck-core:4.13.0-20230515'
+    implementation 'org.rundeck:rundeck-core:5.14.0-rc1-20250722'
 
     pluginLibs ('com.github.rundeck-plugins:http-step:1.1.6'){
         exclude group: 'org.rundeck', module: 'rundeck-core'
