@@ -67,6 +67,9 @@ dependencies {
 
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
     implementation 'org.codehaus.groovy:groovy-all:3.0.9'
+    
+    // Add secure commons-lang3 to provide alternative to vulnerable commons-lang 2.6
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.1'
 
@@ -75,6 +78,15 @@ dependencies {
     testImplementation "cglib:cglib-nodep:2.2.2"
     testImplementation 'org.objenesis:objenesis:1.4'
 
+}
+
+configurations.all {
+    resolutionStrategy {
+        // Replace vulnerable commons-lang with secure commons-lang3
+        dependencySubstitution {
+            substitute module('commons-lang:commons-lang') using module('org.apache.commons:commons-lang3:3.18.0')
+        }
+    }
 }
 
 
