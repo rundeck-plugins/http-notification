@@ -10,13 +10,15 @@ plugins {
     id 'pl.allegro.tech.build.axion-release' version '1.13.4'
 }
 
-group 'com.rundeck.plugin'
+group 'com.github.rundeck-plugins'
 
 apply plugin: 'pl.allegro.tech.build.axion-release'
 apply plugin: 'groovy'
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
-sourceCompatibility = 11
+sourceCompatibility = 17
+targetCompatibility = 17
 ext.rundeckPluginVersion = '1.2'
 ext.pluginClassNames='com.rundeck.plugin.HttpNotificationPlugin'
 ext.pluginName = 'Http Notification'
@@ -40,6 +42,8 @@ scmVersion {
     }
 }
 project.version = scmVersion.version
+// Override version for Grails 7 upgrade
+project.version = '1.0.11-grails7-upgrade-test'
 
 configurations{
     //declare custom pluginLibs configuration to include only libs for this plugin
@@ -59,23 +63,23 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.rundeck:rundeck-core:5.14.0-rc1-20250722'
+    implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
 
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.6'){
+    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.9-grails7-upgrade-test'){
         exclude group: 'org.rundeck', module: 'rundeck-core'
     }
 
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
-    implementation 'org.codehaus.groovy:groovy-all:3.0.9'
+    implementation 'org.apache.groovy:groovy-all:4.0.29'
     
     // Add secure commons-lang3 to provide alternative to vulnerable commons-lang 2.6
     implementation 'org.apache.commons:commons-lang3:3.18.0'
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 
-    testImplementation "org.codehaus.groovy:groovy-all:3.0.17"
-    testImplementation "org.spockframework:spock-core:2.0-groovy-3.0"
-    testImplementation "cglib:cglib-nodep:2.2.2"
+    testImplementation "org.apache.groovy:groovy-all:4.0.29"
+    testImplementation "org.spockframework:spock-core:2.4-groovy-4.0"
+    testImplementation "cglib:cglib-nodep:3.3.0"
     testImplementation 'org.objenesis:objenesis:1.4'
 
 }
@@ -124,4 +128,21 @@ jar.dependsOn(copyToLib)
 
 tasks.withType(Test) {
     useJUnitPlatform()
+    
+    // Java 17+ module access
+    jvmArgs = [
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.util=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+        '--add-opens=java.base/java.net=ALL-UNNAMED'
+    ]
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'http-notification'
+            from components.java
+        }
+    }
 }
