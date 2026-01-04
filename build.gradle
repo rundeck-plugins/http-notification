@@ -25,23 +25,6 @@ ext.pluginName = 'Http Notification'
 ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 
 
-scmVersion {
-    ignoreUncommittedChanges = true
-    tag {
-        prefix = ''
-        versionSeparator = ''
-        def origDeserialize=deserialize
-        //apend .0 to satisfy semver if the tag version is only X.Y
-        deserialize = { config, position, tagName ->
-            def orig = origDeserialize(config, position, tagName)
-            if (orig.split('\\.').length < 3) {
-                orig += ".0"
-            }
-            orig
-        }
-    }
-}
-project.version = scmVersion.version
 // Override version for Grails 7 upgrade
 project.version = '1.0.11-grails7-upgrade-test'
 
