@@ -57,7 +57,7 @@ repositories {
 dependencies {
     implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
 
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.9-grails7-upgrade-test'){
+    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.12-grails7-upgrade-test'){
         exclude group: 'org.rundeck', module: 'rundeck-core'
     }
 
