@@ -26,7 +26,7 @@ ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 
 
 // Override version for Grails 7 upgrade
-project.version = '1.0.12-grails7-upgrade-test'
+project.version = '1.0.13-grails7-upgrade-test'
 
 configurations{
     //declare custom pluginLibs configuration to include only libs for this plugin
