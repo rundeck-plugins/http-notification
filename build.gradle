@@ -26,7 +26,7 @@ ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 
 
 // Override version for Grails 7 upgrade
-project.version = '1.0.13-grails7-upgrade-test'
+project.version = '1.0.14-grails7-upgrade-test'
 
 configurations{
     //declare custom pluginLibs configuration to include only libs for this plugin
@@ -57,7 +57,7 @@ repositories {
 dependencies {
     implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
 
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.12-grails7-upgrade-test'){
+    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.13-grails7-upgrade-test'){
         exclude group: 'org.rundeck', module: 'rundeck-core'
     }
 
@@ -65,7 +65,8 @@ dependencies {
     implementation 'org.apache.groovy:groovy-all:4.0.29'
     
     // Add secure commons-lang3 to provide alternative to vulnerable commons-lang 2.6
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    // Version 3.17.0 matches Spring Boot BOM 3.5.8
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 
@@ -79,8 +80,9 @@ dependencies {
 configurations.all {
     resolutionStrategy {
         // Replace vulnerable commons-lang with secure commons-lang3
+        // Version 3.17.0 matches Spring Boot BOM 3.5.8
         dependencySubstitution {
-            substitute module('commons-lang:commons-lang') using module('org.apache.commons:commons-lang3:3.18.0')
+            substitute module('commons-lang:commons-lang') using module('org.apache.commons:commons-lang3:3.17.0')
         }
     }
 }
