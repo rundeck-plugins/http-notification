@@ -26,7 +26,7 @@ ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 
 
 // Override version for Grails 7 upgrade
-project.version = '1.0.18-grails7-upgrade-test'
+project.version = '1.0.19-grails7-upgrade-test'
 
 configurations{
     //declare custom pluginLibs configuration to include only libs for this plugin
@@ -57,7 +57,7 @@ repositories {
 dependencies {
     implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
 
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.17-grails7-upgrade-test'){
+    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.18-grails7-upgrade-test'){
         exclude group: 'org.rundeck', module: 'rundeck-core'
     }
 
@@ -88,16 +88,12 @@ configurations.all {
 }
 
 
-// task to copy plugin libs to output/lib dir
-task copyToLib(type: Copy) {
-    into "$buildDir/output/lib"
-    from configurations.pluginLibs
-}
-
-
-
 jar {
-    from "$buildDir/output"
+    // Include plugin dependencies in lib/ directory
+    into('lib') {
+        from configurations.pluginLibs
+    }
+    
     manifest {
         def libList = configurations.pluginLibs.collect{'lib/' + it.name}.join(' ')
         attributes 'Rundeck-Plugin-Name' : pluginName
@@ -113,12 +109,7 @@ jar {
         attributes 'Rundeck-Plugin-Archive': 'true'
         attributes 'Rundeck-Plugin-Libs': "${libList}"
     }
-    dependsOn(copyToLib)
 }
-
-
-//set jar task to depend on copyToLib
-jar.dependsOn(copyToLib)
 
 tasks.withType(Test) {
     useJUnitPlatform()
