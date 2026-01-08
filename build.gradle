@@ -4,7 +4,17 @@ plugins {
     id 'maven-publish'
 }
 
-group 'com.github.rundeck-plugins'
+group 'com.rundeck.plugins'
+
+scmVersion {
+    ignoreUncommittedChanges = false
+    tag {
+        prefix = ''           // NO "v" prefix - see PLUGIN_TAGGING_ARCHITECTURE.md
+        versionSeparator = ''
+    }
+}
+
+version = scmVersion.version  // Dynamic version from git tag
 
 sourceCompatibility = 17
 targetCompatibility = 17
@@ -12,10 +22,6 @@ ext.rundeckPluginVersion = '1.2'
 ext.pluginClassNames='com.rundeck.plugin.HttpNotificationPlugin'
 ext.pluginName = 'Http Notification'
 ext.pluginDescription = 'A notification plugin that makes HTTP requests'
-
-
-// Override version for Grails 7 upgrade
-project.version = '1.0.21-grails7-upgrade-test'
 
 configurations{
     //declare custom pluginLibs configuration to include only libs for this plugin
@@ -36,8 +42,14 @@ repositories {
             includeGroup('org.rundeck')
         }
     }
+    maven {
+        name = "PackageCloudTest"
+        url = uri("https://packagecloud.io/pagerduty/rundeckpro-test/maven2")
+        content {
+            includeGroup('com.rundeck.plugins')
+        }
+    }
     mavenCentral()
-    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -45,7 +57,7 @@ dependencies {
 
     // Bundle http-step plugin (already contains httpclient, gson, commons-lang3, httpcore)
     // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.18-grails7-upgrade-test') {
+    pluginLibs ('com.rundeck.plugins:http-step:1.1.19-grails7') {
         transitive = false
     }
 
@@ -96,8 +108,24 @@ test {
 publishing {
     publications {
         maven(MavenPublication) {
+            groupId = 'com.rundeck.plugins'
             artifactId = 'http-notification'
+            version = project.version
             from components.java
+        }
+    }
+    
+    repositories {
+        maven {
+            name = "PackageCloudTest"
+            url = uri("https://packagecloud.io/pagerduty/rundeckpro-test/maven2")
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+            credentials(HttpHeaderCredentials) {
+                name = "Authorization"
+                value = "Bearer " + (System.getenv("PKGCLD_WRITE_TOKEN") ?: project.findProperty("pkgcldWriteToken"))
+            }
         }
     }
 }
