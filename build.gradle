@@ -1,21 +1,10 @@
-
-buildscript {
-    repositories {
-        mavenCentral()
-        maven { url "https://oss.sonatype.org/content/groups/public"}
-    }
-}
-
 plugins {
-    id 'pl.allegro.tech.build.axion-release' version '1.13.4'
+    id 'pl.allegro.tech.build.axion-release' version '1.17.2'
+    id 'java'
+    id 'maven-publish'
 }
 
 group 'com.github.rundeck-plugins'
-
-apply plugin: 'pl.allegro.tech.build.axion-release'
-apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'maven-publish'
 
 sourceCompatibility = 17
 targetCompatibility = 17
@@ -26,7 +15,7 @@ ext.pluginDescription = 'A notification plugin that makes HTTP requests'
 
 
 // Override version for Grails 7 upgrade
-project.version = '1.0.20-grails7-upgrade-test'
+project.version = '1.0.21-grails7-upgrade-test'
 
 configurations{
     //declare custom pluginLibs configuration to include only libs for this plugin
@@ -39,53 +28,34 @@ configurations{
 }
 
 repositories {
-    mavenCentral()
     mavenLocal()
     maven {
         name = 'Central Portal Snapshots'
         url = 'https://central.sonatype.com/repository/maven-snapshots/'
-        
-        // Only search this repository for org.rundeck snapshots
         content {
             includeGroup('org.rundeck')
         }
     }
+    mavenCentral()
     maven { url 'https://jitpack.io' }
-
 }
 
 dependencies {
     implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
 
-    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.18-grails7-upgrade-test'){
-        exclude group: 'org.rundeck', module: 'rundeck-core'
+    // Bundle http-step plugin (already contains httpclient, gson, commons-lang3, httpcore)
+    // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
+    pluginLibs ('com.github.rundeck-plugins:http-step:1.1.18-grails7-upgrade-test') {
+        transitive = false
     }
 
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
-    implementation 'org.apache.groovy:groovy-all:4.0.29'
-    
-    // Add secure commons-lang3 to provide alternative to vulnerable commons-lang 2.6
-    // Version 3.17.0 required for Grails 7 / Spring Boot compatibility
-    implementation 'org.apache.commons:commons-lang3:3.17.0'
-
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
-
     testImplementation "org.apache.groovy:groovy-all:4.0.29"
     testImplementation "org.spockframework:spock-core:2.4-groovy-4.0"
     testImplementation "cglib:cglib-nodep:3.3.0"
     testImplementation 'org.objenesis:objenesis:1.4'
-
 }
 
-configurations.all {
-    resolutionStrategy {
-        // Replace vulnerable commons-lang with secure commons-lang3
-        // Version 3.17.0 required for Grails 7 / Spring Boot compatibility
-        dependencySubstitution {
-            substitute module('commons-lang:commons-lang') using module('org.apache.commons:commons-lang3:3.17.0')
-        }
-    }
-}
 
 
 jar {
@@ -111,10 +81,10 @@ jar {
     }
 }
 
-tasks.withType(Test) {
-    useJUnitPlatform()
+test {
+    useJUnit()
     
-    // Java 17+ module access
+    // Java 17+ module access for reflection/mocking
     jvmArgs = [
         '--add-opens=java.base/java.lang=ALL-UNNAMED',
         '--add-opens=java.base/java.util=ALL-UNNAMED',
