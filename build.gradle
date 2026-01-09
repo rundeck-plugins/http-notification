@@ -1,5 +1,6 @@
 plugins {
     id 'pl.allegro.tech.build.axion-release' version '1.17.2'
+    id 'groovy'
     id 'java'
     id 'maven-publish'
 }
@@ -53,9 +54,14 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.apache.groovy:groovy-all:4.0.29'
     implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
-
-    // Bundle http-step plugin (already contains httpclient, gson, commons-lang3, httpcore)
+    
+    // Apache HTTP client dependencies for compilation (http-step bundles these but doesn't expose them transitively)
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
+    
+    // Bundle http-step plugin in lib/ directory for runtime
     // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
     pluginLibs ('com.rundeck.plugins:http-step:1.1.19-grails7') {
         transitive = false
