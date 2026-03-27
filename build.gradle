@@ -64,7 +64,7 @@ dependencies {
     
     // Bundle http-step plugin in lib/ directory for runtime
     // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
-    pluginLibs ('com.rundeck.plugins:http-step:1.1.21-grails7') {
+    pluginLibs ('com.rundeck.plugins:http-step:1.1.20-grails7') {
         transitive = false
     }
 
