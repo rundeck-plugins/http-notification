@@ -59,19 +59,20 @@ dependencies {
     
     // Apache HTTP client dependencies for compilation (http-step bundles these but doesn't expose them transitively)
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
-    implementation 'org.apache.commons:commons-lang3:3.17.0'
+    // Version 3.18.0 fixes CVE-2025-48924 (StackOverflowError in ClassUtils)
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
     
     // Bundle http-step plugin in lib/ directory for runtime
     // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
-    pluginLibs ('com.rundeck.plugins:http-step:1.1.19-grails7') {
+    pluginLibs ('com.rundeck.plugins:http-step:1.1.21-grails7') {
         transitive = false
     }
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation "org.apache.groovy:groovy-all:4.0.29"
     testImplementation "org.spockframework:spock-core:2.4-groovy-4.0"
-    testImplementation "cglib:cglib-nodep:3.3.0"
-    testImplementation 'org.objenesis:objenesis:1.4'
+    testImplementation "net.bytebuddy:byte-buddy:1.14.11"
+    testImplementation 'org.objenesis:objenesis:3.4'
 }
 
 
