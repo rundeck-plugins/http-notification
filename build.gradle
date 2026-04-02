@@ -60,7 +60,7 @@ dependencies {
     // Apache HTTP client dependencies for compilation (http-step bundles these but doesn't expose them transitively)
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
     // Version 3.18.0 fixes CVE-2025-48924 (StackOverflowError in ClassUtils)
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
     
     // Bundle http-step plugin in lib/ directory for runtime
     // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
