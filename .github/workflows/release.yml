@@ -32,6 +32,6 @@ jobs:
             --generate-notes \
             --title 'Release ${{ steps.get_version.outputs.VERSION }}' \
             ${{ github.ref_name }} \
-            build/libs/http-notification-plugin-${{ steps.get_version.outputs.VERSION }}.jar
+            build/libs/http-notification-${{ steps.get_version.outputs.VERSION }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
