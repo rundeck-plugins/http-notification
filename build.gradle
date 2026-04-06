@@ -2,10 +2,16 @@ plugins {
     id 'pl.allegro.tech.build.axion-release' version '1.17.2'
     id 'groovy'
     id 'java'
-    id 'maven-publish'
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
 }
 
-group 'com.rundeck.plugins'
+group 'org.rundeck.plugins'
+
+ext.publishName = "Http Notification ${project.version}"
+ext.githubSlug = 'rundeck-plugins/http-notification'
+ext.developers = [
+        [id: 'gschueler', name: 'Greg Schueler', email: 'greg@rundeck.com']
+]
 
 scmVersion {
     ignoreUncommittedChanges = false
@@ -17,8 +23,12 @@ scmVersion {
 
 version = scmVersion.version  // Dynamic version from git tag
 
-sourceCompatibility = 17
-targetCompatibility = 17
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    withSourcesJar()
+    withJavadocJar()
+}
 ext.rundeckPluginVersion = '1.2'
 ext.pluginClassNames='com.rundeck.plugin.HttpNotificationPlugin'
 ext.pluginName = 'Http Notification'
@@ -47,7 +57,7 @@ repositories {
         name = "PackageCloudTest"
         url = uri("https://packagecloud.io/pagerduty/rundeckpro-test/maven2")
         content {
-            includeGroup('com.rundeck.plugins')
+            includeGroup('org.rundeck.plugins')
         }
     }
     mavenCentral()
@@ -55,7 +65,8 @@ repositories {
 
 dependencies {
     implementation 'org.apache.groovy:groovy-all:4.0.29'
-    implementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
+    compileOnly 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
+    testImplementation 'org.rundeck:rundeck-core:6.0.0-SNAPSHOT'
     
     // Apache HTTP client dependencies for compilation (http-step bundles these but doesn't expose them transitively)
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
@@ -64,7 +75,7 @@ dependencies {
     
     // Bundle http-step plugin in lib/ directory for runtime
     // Use transitive=false to avoid duplicating dependencies already bundled in http-step JAR
-    pluginLibs ('com.rundeck.plugins:http-step:1.1.20-grails7') {
+    pluginLibs ('org.rundeck.plugins:http-step:1.1.20-grails7') {
         transitive = false
     }
 
@@ -112,27 +123,14 @@ test {
     ]
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId = 'com.rundeck.plugins'
-            artifactId = 'http-notification'
-            version = project.version
-            from components.java
-        }
-    }
-    
+nexusPublishing {
+    packageGroup = 'org.rundeck.plugins'
     repositories {
-        maven {
-            name = "PackageCloudTest"
-            url = uri("https://packagecloud.io/pagerduty/rundeckpro-test/maven2")
-            authentication {
-                header(HttpHeaderAuthentication)
-            }
-            credentials(HttpHeaderCredentials) {
-                name = "Authorization"
-                value = "Bearer " + (System.getenv("PKGCLD_WRITE_TOKEN") ?: project.findProperty("pkgcldWriteToken"))
-            }
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
 }
+
+apply from: "${rootDir}/gradle/publishing.gradle"
