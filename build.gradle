@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.axionRelease)
     id 'groovy'
     id 'java'
-    alias(libs.plugins.nexusPublish)
 }
 
 group 'org.rundeck.plugins'
@@ -119,16 +118,6 @@ test {
         '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
         '--add-opens=java.base/java.net=ALL-UNNAMED'
     ]
-}
-
-nexusPublishing {
-    packageGroup = 'org.rundeck.plugins'
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
-        }
-    }
 }
 
 apply from: "${rootDir}/gradle/publishing.gradle"
