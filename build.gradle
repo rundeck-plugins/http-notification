@@ -55,8 +55,8 @@ repositories {
         }
     }
     maven {
-        name = "PackageCloudTest"
-        url = uri("https://packagecloud.io/pagerduty/rundeckpro-test/maven2")
+        name = "PackageCloud"
+        url = uri("https://packagecloud.io/pagerduty/rundeck-plugins/maven2")
         content {
             includeGroup('org.rundeck.plugins')
         }
@@ -83,6 +83,13 @@ dependencies {
     testImplementation libs.bundles.testLibs
 }
 
+configurations.all {
+    resolutionStrategy {
+        // Force commons-codec, pulled in transitively via httpclient 4.5.14, to a
+        // version that fixes SNYK-JAVA-COMMONSCODEC-561518 (CWE-200 info exposure)
+        force 'commons-codec:commons-codec:1.14'
+    }
+}
 
 
 jar {
